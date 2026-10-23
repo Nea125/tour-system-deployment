@@ -1,0 +1,157 @@
+networks:
+  tour-system-net:
+    external: true
+
+volumes:
+  pg-tour-system-vol:
+  keycloak-tour-system-vol:
+
+services:
+
+  # =========================
+  # POSTGRESQL
+  # =========================
+  postgres-tour-system:
+    image: postgres:18.4
+    container_name: postgres-tour-system
+    restart: unless-stopped
+
+    ports:
+      - "1400:5432"
+
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    volumes:
+      - pg-tour-system-vol:/var/lib/postgresql/data
+      - ./init_db/:/docker-entrypoint-initdb.d
+
+    networks:
+      - tour-system-net
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+# Spring API
+  spring-api-tour-system:
+    image: tour-api:1.0.0
+    build: ./spring
+    container_name: spring-api-tour-system
+    
+
+    ports:
+      - "1403:1403"
+
+    networks:
+      - tour-system-net
+
+    depends_on:
+      postgres-tour-system:
+        condition: service_healthy
+      keycloak-tour-system:
+        condition: service_started
+    # Binde media path from local to docker
+    volumes:
+      - "/Users/nunea/Desktop/tour-management-system/media-upload/:/workspace/media-upload-file/"
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-tour-system:5432/tour_system_db
+
+      # SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:1401/realms/tour-system
+      # SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-tour-system:8080/realms/tour-system/protocol/openid-connect/certs
+
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://10.0.2.2:1401/realms/tour-system
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://localhost:1401/realms/tour-system/protocol/openid-connect/certs
+      # Keycloak Admin Client
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak-tour-system:8080
+
+      MEDIA_LOCATION: /workspace/media-upload-file/
+      MEDIA_BASE_URI: http://localhost:1403
+  # =========================
+  # KEYCLOAK For Postman
+  # =========================
+  keycloak-tour-system:
+    image: quay.io/keycloak/keycloak:26.6.4
+    container_name: keycloak-tour-system
+    restart: unless-stopped
+
+    command:
+      - start
+
+    ports:
+      - "1401:8080"
+
+    environment:
+
+      # =========================
+      # DATABASE
+      # =========================
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-tour-system:5432/keycloak_db
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: 123456
+
+      # =========================
+      # ADMIN
+      # =========================
+      KC_BOOTSTRAP_ADMIN_USERNAME: temp_admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: temp_qwerqwer
+
+      # =========================
+      # HOSTNAME
+      # =========================
+      KC_HOSTNAME: http://10.0.2.2:1401
+      KC_HOSTNAME_ADMIN: http://10.0.2.2:1401
+
+      # KC_HOSTNAME: http://localhost:1401
+      # KC_HOSTNAME_ADMIN: http://localhost:1401
+
+      # =========================
+      # HTTP
+      # =========================
+      KC_HTTP_ENABLED: "true"
+
+      # =========================
+      # PROXY
+      # =========================
+      KC_PROXY_HEADERS: xforwarded
+
+      # =========================
+      # CACHE
+      # =========================
+      KC_CACHE: ispn
+
+      # =========================
+      # LOGGING
+      # =========================
+      KC_LOG_LEVEL: INFO
+
+      # =========================
+      # HEALTH & METRICS
+      # =========================
+      KC_METRICS_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+
+      # =========================
+      # JAVA MEMORY
+      # =========================
+      JAVA_OPTS_APPEND: "-Xms512m -Xmx2048m"
+
+    volumes:
+      - keycloak-tour-system-vol:/opt/keycloak/data
+      - ./keycloak/themes:/opt/keycloak/themes
+      - ./keycloak/conf:/opt/keycloak/conf
+
+    networks:
+      - tour-system-net
+
+    depends_on:
+      postgres-tour-system:
+        condition: service_healthy
+
