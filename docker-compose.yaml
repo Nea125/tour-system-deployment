@@ -38,41 +38,41 @@ services:
       timeout: 5s
       retries: 10
 
-# Spring API
-  spring-api-tour-system:
-    image: tour-api:1.0.0
-    build: ./spring
-    container_name: spring-api-tour-system
+# # Spring API
+#   spring-api-tour-system:
+#     image: tour-api:1.0.0
+#     build: ./spring
+#     container_name: spring-api-tour-system
     
 
-    ports:
-      - "1403:1403"
+#     ports:
+#       - "1403:1403"
 
-    networks:
-      - tour-system-net
+#     networks:
+#       - tour-system-net
 
-    depends_on:
-      postgres-tour-system:
-        condition: service_healthy
-      keycloak-tour-system:
-        condition: service_started
-    # Binde media path from local to docker
-    volumes:
-      - "/Users/nunea/Desktop/tour-management-system/media-upload/:/workspace/media-upload-file/"
+#     depends_on:
+#       postgres-tour-system:
+#         condition: service_healthy
+#       keycloak-tour-system:
+#         condition: service_started
+#     # Binde media path from local to docker
+#     volumes:
+#       - "/Users/nunea/Desktop/tour-management-system/media-upload/:/workspace/media-upload-file/"
 
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-tour-system:5432/tour_system_db
+#     environment:
+#       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-tour-system:5432/tour_system_db
 
-      # SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:1401/realms/tour-system
-      # SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-tour-system:8080/realms/tour-system/protocol/openid-connect/certs
+#       # SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:1401/realms/tour-system
+#       # SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-tour-system:8080/realms/tour-system/protocol/openid-connect/certs
 
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://10.0.2.2:1401/realms/tour-system
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://localhost:1401/realms/tour-system/protocol/openid-connect/certs
-      # Keycloak Admin Client
-      KEYCLOAK_AUTH_SERVER_URL: http://keycloak-tour-system:8080
+#       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://10.0.2.2:1401/realms/tour-system
+#       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://localhost:1401/realms/tour-system/protocol/openid-connect/certs
+#       # Keycloak Admin Client
+#       KEYCLOAK_AUTH_SERVER_URL: http://keycloak-tour-system:8080
 
-      MEDIA_LOCATION: /workspace/media-upload-file/
-      MEDIA_BASE_URI: http://localhost:1403
+#       MEDIA_LOCATION: /workspace/media-upload-file/
+#       MEDIA_BASE_URI: http://localhost:1403
   # =========================
   # KEYCLOAK For Postman
   # =========================
